@@ -104,19 +104,28 @@ const rl = readline.createInterface({
 	output: process.stdout,
 });
 
-while(true){
-	rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n)", (answer) => {
-		if(answer.toLowerCase() === "n"){
-			break;
-		}
+rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n)", (answer) => {
+	if(answer.toLowerCase() === "n"){
+		console.log("Come back soon!");
+		rl.close();
+	}
+	else if(answer.toLowerCase() === "y"){
 
-		console.log(`Here's your starting inventory:\n`);
-		stand.print_inventory();
-		stand.print_weather();
+		while(true){
+			if(stand.balance === 0){
+				console.log("Out of money! Game Over!");
+				break;
+			}
+
+			console.log(`Here's your starting inventory:\n`);
+			stand.print_inventory();
+			stand.print_weather();
 		
 
-		rl.close();
-		console.log("Play again soon!");
-	});
-}
+		
+			console.log("Play again soon!");
+		}
+	} else { console.log("Invalid response."); }
+	rl.close();
+});
 
