@@ -1,7 +1,6 @@
 // Our implementation of a lemonade stand
 // Andre Giske & Luis Herrera
 
-import { randomBytes } from "crypto";
 import * as readline from "readline";
 
 interface Weather {
@@ -25,17 +24,17 @@ interface Prices {
 }
 
 function randomize_price(min: number, max: number): number {
-	return Math.random() * (max - min) + min;
+	const value = Math.random() * (max - min) + min;
+	return Math.round(value * 100) / 100;
 }
 
 function generate_price(): Prices {
 	return {
-		cup_price: randomize_price(1, 3);
-		ice_price: randomize_price(1, 3);
-		sugar_price: randomize_price(1, 3);
-		lemon_price: randomize_price(1, 3);
-	}
-
+		cup_price: randomize_price(1, 3),
+		ice_price: randomize_price(1, 3),
+		sugar_price: randomize_price(1, 3),
+		lemon_price: randomize_price(1, 3)
+	};
 }
 
 class Inventory {
@@ -99,12 +98,6 @@ class Lemonade_Stand {
 		console.log(`The weather is: ${w}`)
 	}
 
-	print_market(): void {
-		for(let i = 0; i < 3; i++){
-
-		}
-	}
-
 	pick_weather(): keyof Weather {
 		const keys = Object.keys(weather) as (keyof Weather)[];
 		const randomIndex = Math.floor(Math.random() * keys.length);
@@ -136,10 +129,48 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 			stand.print_inventory();
 			stand.print_weather();
 
-			console.log(`Here are the current market prices: `);
-			stand.print_market();
+			const market = generate_price();
+			console.log(`Here are the current market prices: `, market);
 
-
+			rl.question(`What would you like to purchase today? (cups/ice/sugar/lemons/n) `, answer => {
+				while(true){
+					if(answer.toLowerCase() === "n"){
+						break;
+					}
+					else if(answer.toLowerCase() === "cups"){
+						if(stand.balance - market.cup_price < 0){
+							console.log("Insufficient funds.")
+						} else {
+							stand.balance -= market.cup_price;
+							stand.inventory.cups += 1;
+						}
+					}
+					else if(answer.toLowerCase() === "ice"){
+						if(stand.balance - market.ice_price < 0){
+							console.log("Insufficient funds.")
+						} else {
+							stand.balance -= market.ice_price;
+							stand.inventory.ice += 1;
+						}
+					}
+					else if(answer.toLowerCase() === "sugar"){
+						if(stand.balance - market.sugar_price < 0){
+							console.log("Insufficient funds.")
+						} else {
+							stand.balance -= market.sugar_price;
+							stand.inventory.sugar += 1;
+						}
+					}
+					else if(answer.toLowerCase() === "lemons"){
+						if(stand.balance - market.sugar_price < 0){
+							console.log("Insufficient funds.")
+						} else {
+							stand.balance -= market.lemon_price;
+							stand.inventory.lemons += 1;
+						}
+					} else { console.log("Invalid response."); }
+				}
+			});
 			stand.new_day();
 			break;
 		}
