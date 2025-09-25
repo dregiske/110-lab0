@@ -1,4 +1,10 @@
+import { CustomPromisify } from "util";
+
 class Lemonade_Stand {
+	inventory: Inventory;
+
+
+
 	make_lemonade(){
 		// remove ingredients from inventory
 	}
@@ -8,8 +14,9 @@ class Lemonade_Stand {
 	}
 }
 
-interface inventory {
-	lemons: number;
-	sugar: number;
+class Inventory {
 	cups: number;
+	ice: number;
+	sugar: number
+	lemons: number;
 }
