@@ -9,3 +9,9 @@ changes changes
 changes
 
 changesss
+snakes
+
+
+git reset = remove files from committing
+git commit --amend = makes new changes after commit
+git checkout = takes file to previous push
