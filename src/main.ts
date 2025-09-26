@@ -79,6 +79,7 @@ class Lemonade_Stand {
 	make_sale(): void {
 		if(!this.inventory.validate_sale()){
 			console.log("Unfortunately we don't have enough ingredients! Come back next time.");
+			return;
 		}
 		this.balance += 2; // change
 		this.customers += 1;
@@ -120,7 +121,7 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 	else if(answer.toLowerCase() === "y"){
 
 		while(true){
-			if(stand.balance === 0){
+			if(stand.balance <= 0){
 				console.log("Out of money! Game Over!");
 				break;
 			}
@@ -132,12 +133,13 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 			const market = generate_price();
 			console.log(`Here are the current market prices: `, market);
 
-			rl.question(`What would you like to purchase today? (cups/ice/sugar/lemons/n) `, answer => {
-				while(true){
-					if(answer.toLowerCase() === "n"){
+			rl.question(`What would you like to purchase today? (cups/ice/sugar/lemons/n) `, (ans) => {
+				const a = ans.toLowerCase();
+				while(stand.balance > 0){
+					if(a === "n"){
 						break;
 					}
-					else if(answer.toLowerCase() === "cups"){
+					else if(a === "cups"){
 						if(stand.balance - market.cup_price < 0){
 							console.log("Insufficient funds.")
 						} else {
@@ -145,7 +147,7 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 							stand.inventory.cups += 1;
 						}
 					}
-					else if(answer.toLowerCase() === "ice"){
+					else if(a === "ice"){
 						if(stand.balance - market.ice_price < 0){
 							console.log("Insufficient funds.")
 						} else {
@@ -153,7 +155,7 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 							stand.inventory.ice += 1;
 						}
 					}
-					else if(answer.toLowerCase() === "sugar"){
+					else if(a === "sugar"){
 						if(stand.balance - market.sugar_price < 0){
 							console.log("Insufficient funds.")
 						} else {
@@ -161,8 +163,8 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 							stand.inventory.sugar += 1;
 						}
 					}
-					else if(answer.toLowerCase() === "lemons"){
-						if(stand.balance - market.sugar_price < 0){
+					else if(a === "lemons"){
+						if(stand.balance - market.lemon_price < 0){
 							console.log("Insufficient funds.")
 						} else {
 							stand.balance -= market.lemon_price;
@@ -171,8 +173,15 @@ rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) 
 					} else { console.log("Invalid response."); }
 				}
 			});
+
 			stand.new_day();
-			break;
+			rl.question(`Are you ready for the next day?`, (ready) => {
+				if(ready.toLowerCase() === "n"){
+					console.log("Exiting game.");
+					rl.close();
+					return;
+				}
+			});
 		}
 		console.log("Play again soon!");
 
