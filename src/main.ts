@@ -67,10 +67,14 @@ class Inventory {
 
 class Lemonade_Stand {
 	inventory: Inventory;
-	weather: Weather;
+	weatherTable: Weather = weather;
 	balance: number;
 	day: number;
 	customers: number;
+
+	basePrice = 2.0;
+	todayWeather!: keyof Weather;
+	todayPrice = this.basePrice;
 
 	constructor() {
 		this.inventory = new Inventory(10, 10, 10, 10);
@@ -80,12 +84,16 @@ class Lemonade_Stand {
 		this.customers = 0;
 	}
 
+	private round2(n: number){
+		return Math.round(n * 100) / 100;
+	}
+
 	make_sale(): void {
 		if(!this.inventory.validate_sale()){
-			console.log("Unfortunately we don't have enough ingredients! Come back next time.");
+			console.log("Unfortunately you don't have enough ingredients!");
 			return;
 		}
-		this.balance += 2; // change to price of lemonade for that day
+		this.balance = this.round2(this.balance + this.todayPrice);
 		this.customers += 1;
 		this.inventory.make_sale();
 	}
@@ -93,22 +101,25 @@ class Lemonade_Stand {
 	new_day(): void {
 		this.day += 1;
 	}
+	start_of_day(): void {
+		console.log(`It is currently day: ${this.day}`);
+		this.pick_weather();
+		console.log(`Today's weather: ${this.todayWeather} (x${this.weatherTable[this.todayWeather]})`);
+		console.log(`Today's lemonade price: $${this.todayPrice.toFixed(2)}`);
+		console.log(`Here's your starting inventory:\n`);
+		this.print_inventory();
 
+		console.log(`You currently have $${this.balance} left.`)
+	}
 	print_inventory(): void {
 		console.log(` cups: ${this.inventory.cups}\n ice: ${this.inventory.ice}\n sugar: ${this.inventory.sugar}\n lemons: ${this.inventory.lemons}\n`);
 	}
-
-	pick_weather(): keyof Weather {
-		const keys = Object.keys(weather) as (keyof Weather)[];
-		const randomIndex = Math.floor(Math.random() * keys.length);
-		return keys[randomIndex];
+	pick_weather(): void {
+		const keys = Object.keys(this.weatherTable) as (keyof Weather)[];
+		this.todayWeather = keys[Math.floor(Math.random() * keys.length)];
+		const multiplier = this.weatherTable[this.todayWeather];
+		this.todayPrice = this.round2(this.basePrice * multiplier);
 	}
-
-	print_weather(): void {
-		let w = this.pick_weather();
-		console.log(`The weather is: ${w}`)
-	}
-
 	async prompt_buy(rl: readline.Interface): Promise<void> {
 		const market = generate_price();
 		console.log(`Here are the current market prices: `, market);
@@ -119,7 +130,7 @@ class Lemonade_Stand {
 		}
 
 		while(this.balance > 0){
-			const ans = await (await ask(rl, "What would you like to purchase today? (cups/ice/sugar/lemons/n)")).toLowerCase();
+			const ans = await (await ask(rl, "What would you like to purchase today? (cups/ice/sugar/lemons/n) ")).toLowerCase();
 			if(ans === "n"){ break; }
 			
 			else if(ans === "cups"){
@@ -179,10 +190,7 @@ async function game() {
 			break;
 		}
 
-		console.log(`It is currently day: ${stand.day}`);
-		console.log(`Here's your starting inventory:\n`);
-		stand.print_inventory();
-		stand.print_weather();
+		stand.start_of_day();
 
 		await stand.prompt_buy(rl);
 
@@ -200,3 +208,5 @@ async function game() {
 	console.log("Play again soon!");
 	rl.close();
 }
+
+game().catch(err => console.error(err));
