@@ -78,7 +78,6 @@ class Lemonade_Stand {
 
 	constructor() {
 		this.inventory = new Inventory(10, 10, 10, 10);
-		this.weather = weather;
 		this.balance = 20;
 		this.day = 1;
 		this.customers = 0;
@@ -108,8 +107,14 @@ class Lemonade_Stand {
 		console.log(`Today's lemonade price: $${this.todayPrice.toFixed(2)}`);
 		console.log(`Here's your starting inventory:\n`);
 		this.print_inventory();
-
 		console.log(`You currently have $${this.balance} left.`)
+	}
+	end_of_day(): void {
+		while(this.inventory.validate_sale()){
+			this.make_sale();
+		}
+		console.log("Ran out of ingredients!");
+		console.log(`Today we served ${this.customers} customers!`);
 	}
 	print_inventory(): void {
 		console.log(` cups: ${this.inventory.cups}\n ice: ${this.inventory.ice}\n sugar: ${this.inventory.sugar}\n lemons: ${this.inventory.lemons}\n`);
@@ -194,8 +199,8 @@ async function game() {
 
 		await stand.prompt_buy(rl);
 
-		stand.make_sale();
-		console.log(`After selling a cup, balance: $${stand.balance.toFixed(2)}`);
+		stand.end_of_day();
+		console.log(`After selling out, our current balance is $${stand.balance.toFixed(2)}`);
 
 		const next = (await ask(rl, "Are you ready for the next day? (y/n) ")).toLowerCase();
 		if(next !== "y") {
