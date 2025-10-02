@@ -3,6 +3,10 @@
 
 import * as readline from "readline";
 
+function ask(rl: readline.Interface, q: string): Promise<string> {
+	return new Promise((resolve) => rl.question(q, resolve));
+}
+
 interface Weather {
 	sunny: number;
 	windy:  number;
@@ -81,7 +85,7 @@ class Lemonade_Stand {
 			console.log("Unfortunately we don't have enough ingredients! Come back next time.");
 			return;
 		}
-		this.balance += 2; // change
+		this.balance += 2; // change to price of lemonade for that day
 		this.customers += 1;
 		this.inventory.make_sale();
 	}
@@ -94,99 +98,105 @@ class Lemonade_Stand {
 		console.log(` cups: ${this.inventory.cups}\n ice: ${this.inventory.ice}\n sugar: ${this.inventory.sugar}\n lemons: ${this.inventory.lemons}\n`);
 	}
 
-	print_weather(): void {
-		let w = this.pick_weather();
-		console.log(`The weather is: ${w}`)
-	}
-
 	pick_weather(): keyof Weather {
 		const keys = Object.keys(weather) as (keyof Weather)[];
 		const randomIndex = Math.floor(Math.random() * keys.length);
 		return keys[randomIndex];
 	}
+
+	print_weather(): void {
+		let w = this.pick_weather();
+		console.log(`The weather is: ${w}`)
+	}
+
+	async prompt_buy(rl: readline.Interface): Promise<void> {
+		const market = generate_price();
+		console.log(`Here are the current market prices: `, market);
+
+		if(this.balance < Math.min(market.cup_price, market.ice_price, market.lemon_price, market.sugar_price)){
+			console.log("You cannot afford any items today.");
+			return;
+		}
+
+		while(this.balance > 0){
+			const ans = await (await ask(rl, "What would you like to purchase today? (cups/ice/sugar/lemons/n)")).toLowerCase();
+			if(ans === "n"){ break; }
+			
+			else if(ans === "cups"){
+				if(this.balance - market.cup_price < 0){
+					console.log("Insufficient funds.")
+				} else {
+					this.balance -= market.cup_price;
+					this.inventory.cups += 1;
+				}
+			}
+			else if(ans === "ice"){
+				if(this.balance - market.ice_price < 0){
+					console.log("Insufficient funds.")
+				} else {
+					this.balance -= market.ice_price;
+					this.inventory.ice += 1;
+				}
+			}
+			else if(ans === "sugar"){
+				if(this.balance - market.sugar_price < 0){
+					console.log("Insufficient funds.")
+				} else {
+					this.balance -= market.sugar_price;
+					this.inventory.sugar += 1;
+				}
+			}
+			else if(ans === "lemons"){
+				if(this.balance - market.lemon_price < 0){
+					console.log("Insufficient funds.")
+				} else {
+					this.balance -= market.lemon_price;
+					this.inventory.lemons += 1;
+				}
+			} else { console.log("Invalid response."); }
+
+			console.log(`Current balance: $${this.balance.toFixed(2)}`);
+			this.print_inventory();
+		}
+	}
 }
 
-const stand = new Lemonade_Stand();
+async function game() {
+	const rl = readline.createInterface( { input: process.stdin, output: process.stdout });
+	const stand = new Lemonade_Stand();
 
-const rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout,
-});
+	const start = (await ask(rl, "Welcome to my Lemonade Stand game! Want to play? (y/n) ")).toLowerCase();
 
-rl.question("Welcome to my Lemonade Stand game! Want to play? (y/n) ", (answer) => {
-	if(answer.toLowerCase() === "n"){
-		console.log("Come back soon!");
+	if(start !== "y") {
+		console.log("Come back again!");
 		rl.close();
+		return;
 	}
-	else if(answer.toLowerCase() === "y"){
 
-		while(true){
-			if(stand.balance <= 0){
-				console.log("Out of money! Game Over!");
-				break;
-			}
-			console.log(`It is currently day: ${stand.day}`);
-			console.log(`Here's your starting inventory:\n`);
-			stand.print_inventory();
-			stand.print_weather();
-
-			const market = generate_price();
-			console.log(`Here are the current market prices: `, market);
-
-			rl.question(`What would you like to purchase today? (cups/ice/sugar/lemons/n) `, (ans) => {
-				const a = ans.toLowerCase();
-				while(stand.balance > 0){
-					if(a === "n"){
-						break;
-					}
-					else if(a === "cups"){
-						if(stand.balance - market.cup_price < 0){
-							console.log("Insufficient funds.")
-						} else {
-							stand.balance -= market.cup_price;
-							stand.inventory.cups += 1;
-						}
-					}
-					else if(a === "ice"){
-						if(stand.balance - market.ice_price < 0){
-							console.log("Insufficient funds.")
-						} else {
-							stand.balance -= market.ice_price;
-							stand.inventory.ice += 1;
-						}
-					}
-					else if(a === "sugar"){
-						if(stand.balance - market.sugar_price < 0){
-							console.log("Insufficient funds.")
-						} else {
-							stand.balance -= market.sugar_price;
-							stand.inventory.sugar += 1;
-						}
-					}
-					else if(a === "lemons"){
-						if(stand.balance - market.lemon_price < 0){
-							console.log("Insufficient funds.")
-						} else {
-							stand.balance -= market.lemon_price;
-							stand.inventory.lemons += 1;
-						}
-					} else { console.log("Invalid response."); }
-				}
-			});
-
-			stand.new_day();
-			rl.question(`Are you ready for the next day?`, (ready) => {
-				if(ready.toLowerCase() === "n"){
-					console.log("Exiting game.");
-					rl.close();
-					return;
-				}
-			});
+	while(true) {
+		if(stand.balance <= 0){
+			console.log("Out of money! Game Over!");
+			break;
 		}
-		console.log("Play again soon!");
 
-	} else { console.log("Invalid response."); }
+		console.log(`It is currently day: ${stand.day}`);
+		console.log(`Here's your starting inventory:\n`);
+		stand.print_inventory();
+		stand.print_weather();
 
+		await stand.prompt_buy(rl);
+
+		stand.make_sale();
+		console.log(`After selling a cup, balance: $${stand.balance.toFixed(2)}`);
+
+		const next = (await ask(rl, "Are you ready for the next day? (y/n) ")).toLowerCase();
+		if(next !== "y") {
+			console.log("Exiting game.");
+			break;
+		}
+		stand.new_day();
+	}
+
+	console.log("Play again soon!");
 	rl.close();
-});
-
+}
